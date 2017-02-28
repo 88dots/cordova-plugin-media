@@ -30,7 +30,7 @@ var mediaObjects = {};
  *
  * @constructor
  * @param src                   The file name or url to play
- * @param successCallback       The callback to be called when the file is done playing or recording.
+ * @param successCallback       The callback to be called when the file is done playing.
  *                                  successCallback()
  * @param errorCallback         The callback to be called if there is an error.
  *                                  errorCallback(int errorCode) - OPTIONAL
@@ -125,34 +125,6 @@ Media.prototype.getCurrentPosition = function(success, fail) {
 };
 
 /**
- * Start recording audio file.
- */
-Media.prototype.startRecord = function() {
-    exec(null, this.errorCallback, "Media", "startRecordingAudio", [this.id, this.src]);
-};
-
-/**
- * Stop recording audio file.
- */
-Media.prototype.stopRecord = function() {
-    exec(null, this.errorCallback, "Media", "stopRecordingAudio", [this.id]);
-};
-
-/**
- * Pause recording audio file.
- */
-Media.prototype.pauseRecord = function() {
-    exec(null, this.errorCallback, "Media", "pauseRecordingAudio", [this.id]);
-};
-
-/**
-* Resume recording audio file.
-*/
-Media.prototype.resumeRecord = function() {
-    exec(null, this.errorCallback, "Media", "resumeRecordingAudio", [this.id]);
-};
-
-/**
  * Release the resources.
  */
 Media.prototype.release = function() {
@@ -175,15 +147,6 @@ Media.prototype.setRate = function(rate) {
     } else {
         console.warn('media.setRate method is currently not supported for', cordova.platformId, 'platform.');
     }
-};
-
-/**
- * Get amplitude of audio.
- */
-Media.prototype.getCurrentAmplitude = function(success, fail) {
-    exec(function(p) {
-        success(p);
-    }, fail, "Media", "getCurrentAmplitudeAudio", [this.id]);
 };
 
 /**

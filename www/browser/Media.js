@@ -31,7 +31,7 @@ var mediaObjects = {};
  *
  * @constructor
  * @param src                   The file name or url to play
- * @param successCallback       The callback to be called when the file is done playing or recording.
+ * @param successCallback       The callback to be called when the file is done playing.
  *                                  successCallback()
  * @param errorCallback         The callback to be called if there is an error.
  *                                  errorCallback(int errorCode) - OPTIONAL
@@ -185,20 +185,6 @@ Media.prototype.getCurrentPosition = function(success, fail) {
     } catch (err) {
         fail(err);
     }
-};
-
-/**
- * Start recording audio file.
- */
-Media.prototype.startRecord = function() {
-    Media.onStatus(this.id, Media.MEDIA_ERROR, "Not supported");
-};
-
-/**
- * Stop recording audio file.
- */
-Media.prototype.stopRecord = function() {
-    Media.onStatus(this.id, Media.MEDIA_ERROR, "Not supported");
 };
 
 /**
