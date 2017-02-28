@@ -187,23 +187,40 @@
     return [self audioFileForResource:resourcePath withId:mediaId doValidation:bValidate forRecording:bRecord suppressValidationErrors:NO];
 }
 
-// returns whether or not audioSession is available - creates it if necessary
-- (BOOL)hasAudioSession
+// ensures audioSession is available - creates it if necessary - returns if there was an error
+- (BOOL)ensureAudioSession
 {
-    BOOL bSession = YES;
+    BOOL bError = NO;
 
     if (!self.avSession) {
-        NSError* error = nil;
+        NSError* __autoreleasing error = nil;
+        AVAudioSession *session = [AVAudioSession sharedInstance];
 
-        self.avSession = [AVAudioSession sharedInstance];
+        // deactivate the audio session until category to mix with other sounds is set
+        [session setActive: NO error: &error];
+        if (!error) {
+            // allow the application to mix its audio with audio from other apps
+            [session setCategory:AVAudioSessionCategoryPlayback
+                     withOptions:AVAudioSessionCategoryOptionMixWithOthers
+                     error:&error];
+             if (!error) {
+                // restore active state and store audio session reference
+                [self.avSession setActive:YES error:&error]
+                if (!error) {
+                    self.avSession = session;
+                }
+            }
+        }
+
+        // is not fatal if can't get AVAudioSession, just log the error and try again later
+        // other audio with higher priority that does not allow mixing could cause this to fail
         if (error) {
-            // is not fatal if can't get AVAudioSession , just log the error
             NSLog(@"error creating audio session: %@", [[error userInfo] description]);
             self.avSession = nil;
-            bSession = NO;
+            bError = YES;
         }
     }
-    return bSession;
+    return bError;
 }
 
 // helper function to create a error object string
@@ -337,9 +354,13 @@
             //self.currMediaId = audioFile.player.mediaId;
             self.currMediaId = mediaId;
 
+            // ensure audio session ready to use
+            // no need to set session category, done when plugin initialized
+            bError = [self ensureAudioSession];
+            /*
             // audioFile.player != nil  or player was successfully created
             // get the audioSession and set the category to allow Playing when device is locked or ring/silent switch engaged
-            if ([self hasAudioSession]) {
+            if (![self ensureAudioSession]) {
                 NSError* __autoreleasing err = nil;
                 NSNumber* playAudioWhenScreenIsLocked = [options objectForKey:@"playAudioWhenScreenIsLocked"];
                 BOOL bPlayAudioWhenScreenIsLocked = YES;
@@ -355,6 +376,7 @@
                     bError = YES;
                 }
             }
+            */
             if (!bError) {
                 NSLog(@"Playing audio sample '%@'", audioFile.resourcePath);
                 double duration = 0;
@@ -670,7 +692,7 @@
                 audioFile.recorder = nil;
             }
             // get the audioSession and set the category to allow recording when device is locked or ring/silent switch engaged
-            if ([weakSelf hasAudioSession]) {
+            if (![weakSelf ensureAudioSession]) {
                 if (![weakSelf.avSession.category isEqualToString:AVAudioSessionCategoryPlayAndRecord]) {
                     [weakSelf.avSession setCategory:AVAudioSessionCategoryRecord error:nil];
                 }
@@ -722,7 +744,7 @@
         };
 
         SEL rrpSel = NSSelectorFromString(@"requestRecordPermission:");
-        if ([self hasAudioSession] && [self.avSession respondsToSelector:rrpSel])
+        if (![self ensureAudioSession] && [self.avSession respondsToSelector:rrpSel])
         {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
