@@ -213,6 +213,8 @@
 
 - (void)setVolume:(CDVInvokedUrlCommand*)command
 {
+    [self.commandDelegate runInBackground:^{
+
     NSString* callbackId = command.callbackId;
 
 #pragma unused(callbackId)
@@ -240,10 +242,13 @@
     }
 
     // don't care for any callbacks
+    }];
 }
 
 - (void)setRate:(CDVInvokedUrlCommand*)command
 {
+    [self.commandDelegate runInBackground:^{
+
     NSString* callbackId = command.callbackId;
 
 #pragma unused(callbackId)
@@ -268,6 +273,7 @@
     }
 
     // don't care for any callbacks
+    }];
 }
 
 - (void)startPlayingAudio:(CDVInvokedUrlCommand*)command
@@ -408,6 +414,8 @@
 
 - (void)stopPlayingAudio:(CDVInvokedUrlCommand*)command
 {
+    [self.commandDelegate runInBackground:^{
+
     NSString* mediaId = [command argumentAtIndex:0];
     CDVAudioFile* audioFile = [[self soundCache] objectForKey:mediaId];
     NSString* jsString = nil;
@@ -440,10 +448,14 @@
     if (jsString) {
         [self.commandDelegate evalJs:jsString];
     }
+
+    }];
 }
 
 - (void)pausePlayingAudio:(CDVInvokedUrlCommand*)command
 {
+    [self.commandDelegate runInBackground:^{
+
     NSString* mediaId = [command argumentAtIndex:0];
     NSString* jsString = nil;
     CDVAudioFile* audioFile = [[self soundCache] objectForKey:mediaId];
@@ -463,10 +475,14 @@
     if (jsString) {
         [self.commandDelegate evalJs:jsString];
     }
+
+    }];
 }
 
 - (void)seekToAudio:(CDVInvokedUrlCommand*)command
 {
+    [self.commandDelegate runInBackground:^{
+
     // args:
     // 0 = Media id
     // 1 = seek to location in milliseconds
@@ -517,11 +533,15 @@
     }
 
     [self.commandDelegate evalJs:jsString];
+
+    }];
 }
 
 
 - (void)release:(CDVInvokedUrlCommand*)command
 {
+    [self.commandDelegate runInBackground:^{
+
     NSString* mediaId = [command argumentAtIndex:0];
     //NSString* mediaId = self.currMediaId;
 
@@ -540,10 +560,14 @@
             NSLog(@"Media with id %@ released", mediaId);
         }
     }
+
+    }];
 }
 
 - (void)getCurrentPositionAudio:(CDVInvokedUrlCommand*)command
 {
+    [self.commandDelegate runInBackground:^{
+
     NSString* callbackId = command.callbackId;
     NSString* mediaId = [command argumentAtIndex:0];
 
@@ -564,6 +588,8 @@
     NSString* jsString = [NSString stringWithFormat:@"%@(\"%@\",%d,%.3f);", @"cordova.require('cordova-plugin-media.Media').onStatus", mediaId, MEDIA_POSITION, position];
     [self.commandDelegate evalJs:jsString];
     [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+
+    }];
 }
 
 - (void)audioPlayerDidFinishPlaying:(AVAudioPlayer*)player successfully:(BOOL)flag
