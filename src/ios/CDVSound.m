@@ -139,9 +139,7 @@
         [session setActive: NO error: &error];
         if (!error) {
             // allow the application to mix its audio with audio from other apps
-            [session setCategory:AVAudioSessionCategoryPlayback
-                     withOptions:AVAudioSessionCategoryOptionMixWithOthers
-                     error:&error];
+            [session setCategory:AVAudioSessionCategoryAmbient error:&error];
              if (!error) {
                 // restore active state and store audio session reference
                 [self.avSession setActive:YES error:&error];
