@@ -21,7 +21,6 @@ package org.apache.cordova.media;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaResourceApi;
-import org.apache.cordova.PermissionHelper;
 
 import android.Manifest;
 import android.content.Context;
@@ -31,7 +30,6 @@ import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.net.Uri;
 import android.os.Build;
 
-import java.security.Permission;
 import java.util.ArrayList;
 
 import org.apache.cordova.LOG;
@@ -43,7 +41,7 @@ import org.json.JSONObject;
 import java.util.HashMap;
 
 /**
- * This class called by CordovaActivity to play and record audio.
+ * This class called by CordovaActivity to play audio (recording functionality removed).
  * The file can be local or over a network using http.
  *
  * Audio formats supported (tested):
@@ -62,14 +60,6 @@ public class AudioHandler extends CordovaPlugin {
     private int origVolumeStream = -1;
     private CallbackContext messageChannel;
 
-
-    public static String [] permissions = { Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE};
-    public static int RECORD_AUDIO = 0;
-    public static int WRITE_EXTERNAL_STORAGE = 1;
-
-    public static final int PERMISSION_DENIED_ERROR = 20;
-
-    private String recordId;
     private String fileUriStr;
 
     /**
@@ -80,19 +70,6 @@ public class AudioHandler extends CordovaPlugin {
         this.pausedForPhone = new ArrayList<AudioPlayer>();
         this.pausedForFocus = new ArrayList<AudioPlayer>();
     }
-
-
-    protected void getWritePermission(int requestCode)
-    {
-        PermissionHelper.requestPermission(this, requestCode, permissions[WRITE_EXTERNAL_STORAGE]);
-    }
-
-
-    protected void getMicPermission(int requestCode)
-    {
-        PermissionHelper.requestPermission(this, requestCode, permissions[RECORD_AUDIO]);
-    }
-
 
     /**
      * Executes the request and returns PluginResult.
@@ -106,27 +83,7 @@ public class AudioHandler extends CordovaPlugin {
         PluginResult.Status status = PluginResult.Status.OK;
         String result = "";
 
-        if (action.equals("startRecordingAudio")) {
-            recordId = args.getString(0);
-            String target = args.getString(1);
-            try {
-                Uri targetUri = resourceApi.remapUri(Uri.parse(target));
-                fileUriStr = targetUri.toString();
-            } catch (IllegalArgumentException e) {
-                fileUriStr = target;
-            }
-            promptForRecord();
-        }
-        else if (action.equals("stopRecordingAudio")) {
-            this.stopRecordingAudio(args.getString(0), true);
-        }
-        else if (action.equals("pauseRecordingAudio")) {
-            this.stopRecordingAudio(args.getString(0), false);
-        }
-        else if (action.equals("resumeRecordingAudio")) {
-            this.resumeRecordingAudio(args.getString(0));
-        }
-        else if (action.equals("startPlayingAudio")) {
+        if (action.equals("startPlayingAudio")) {
             String target = args.getString(1);
             String fileUriStr;
             try {
@@ -174,10 +131,6 @@ public class AudioHandler extends CordovaPlugin {
         else if (action.equals("messageChannel")) {
             messageChannel = callbackContext;
             return true;
-        } else if (action.equals("getCurrentAmplitudeAudio")) {
-            float f = this.getCurrentAmplitudeAudio(args.getString(0));
-            callbackContext.sendPluginResult(new PluginResult(status, f));
-            return true;
         }
         else { // Unrecognized action.
             return false;
@@ -189,7 +142,7 @@ public class AudioHandler extends CordovaPlugin {
     }
 
     /**
-     * Stop all audio players and recorders.
+     * Stop all audio players.
      */
     public void onDestroy() {
         if (!players.isEmpty()) {
@@ -202,7 +155,7 @@ public class AudioHandler extends CordovaPlugin {
     }
 
     /**
-     * Stop all audio players and recorders on navigate.
+     * Stop all audio players on navigate.
      */
     @Override
     public void onReset() {
@@ -275,39 +228,6 @@ public class AudioHandler extends CordovaPlugin {
         }
         audio.destroy();
         return true;
-    }
-
-    /**
-     * Start recording and save the specified file.
-     * @param id				The id of the audio player
-     * @param file				The name of the file
-     */
-    public void startRecordingAudio(String id, String file) {
-        AudioPlayer audio = getOrCreatePlayer(id, file);
-        audio.startRecording(file);
-    }
-
-    /**
-     * Stop/Pause recording and save to the file specified when recording started.
-     * @param id				The id of the audio player
-     * @param stop      If true stop recording, if false pause recording
-     */
-    public void stopRecordingAudio(String id, boolean stop) {
-        AudioPlayer audio = this.players.get(id);
-        if (audio != null) {
-            audio.stopRecording(stop);
-        }
-    }
-
-    /**
-     * Resume recording
-     * @param id				The id of the audio player
-     */
-    public void resumeRecordingAudio(String id) {
-        AudioPlayer audio = players.get(id);
-        if (audio != null) {
-            audio.resumeRecording();
-        }
     }
 
     /**
@@ -386,8 +306,6 @@ public class AudioHandler extends CordovaPlugin {
      */
     @SuppressWarnings("deprecation")
     public void setAudioOutputDevice(int output) {
-        String TAG1 = "AudioHandler.setAudioOutputDevice(): Error : ";
-
         AudioManager audiMgr = (AudioManager) this.cordova.getActivity().getSystemService(Context.AUDIO_SERVICE);
         if (output == 2) {
             audiMgr.setRouting(AudioManager.MODE_NORMAL, AudioManager.ROUTE_SPEAKER, AudioManager.ROUTE_ALL);
@@ -396,7 +314,7 @@ public class AudioHandler extends CordovaPlugin {
             audiMgr.setRouting(AudioManager.MODE_NORMAL, AudioManager.ROUTE_EARPIECE, AudioManager.ROUTE_ALL);
         }
         else {
-             LOG.e(TAG1," Unknown output device");
+             LOG.e("AudioHandler.setAudioOutputDevice(): Error : "," Unknown output device");
         }
     }
 
@@ -437,15 +355,13 @@ public class AudioHandler extends CordovaPlugin {
         };
 
     public void getAudioFocus() {
-        String TAG2 = "AudioHandler.getAudioFocus(): Error : ";
-
         AudioManager am = (AudioManager) this.cordova.getActivity().getSystemService(Context.AUDIO_SERVICE);
         int result = am.requestAudioFocus(focusChangeListener,
                                           AudioManager.STREAM_MUSIC,
                                           AudioManager.AUDIOFOCUS_GAIN);
 
         if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            LOG.e(TAG2,result + " instead of " + AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
+            LOG.e("AudioHandler.getAudioFocus(): Error : ",result + " instead of " + AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
         }
 
     }
@@ -477,13 +393,11 @@ public class AudioHandler extends CordovaPlugin {
      * @param volume            Volume to adjust to 0.0f - 1.0f
      */
     public void setVolume(String id, float volume) {
-        String TAG3 = "AudioHandler.setVolume(): Error : ";
-
         AudioPlayer audio = this.players.get(id);
         if (audio != null) {
             audio.setVolume(volume);
         } else {
-          LOG.e(TAG3,"Unknown Audio Player " + id);
+          LOG.e("AudioHandler.setVolume(): Error : ","Unknown Audio Player " + id);
         }
     }
 
@@ -515,54 +429,5 @@ public class AudioHandler extends CordovaPlugin {
         if (messageChannel != null) {
             messageChannel.sendPluginResult(pluginResult);
         }
-    }
-
-    public void onRequestPermissionResult(int requestCode, String[] permissions,
-                                          int[] grantResults) throws JSONException
-    {
-        for(int r:grantResults)
-        {
-            if(r == PackageManager.PERMISSION_DENIED)
-            {
-                this.messageChannel.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, PERMISSION_DENIED_ERROR));
-                return;
-            }
-        }
-        promptForRecord();
-    }
-
-    /*
-     * This little utility method catch-all work great for multi-permission stuff.
-     *
-     */
-
-    private void promptForRecord()
-    {
-        if(PermissionHelper.hasPermission(this, permissions[WRITE_EXTERNAL_STORAGE])  &&
-                PermissionHelper.hasPermission(this, permissions[RECORD_AUDIO])) {
-            this.startRecordingAudio(recordId, FileHelper.stripFileProtocol(fileUriStr));
-        }
-        else if(PermissionHelper.hasPermission(this, permissions[RECORD_AUDIO]))
-        {
-            getWritePermission(WRITE_EXTERNAL_STORAGE);
-        }
-        else
-        {
-            getMicPermission(RECORD_AUDIO);
-        }
-
-    }
-
-    /**
-     * Get current amplitude of recording.
-     * @param id				The id of the audio player
-     * @return 					amplitude
-     */
-    public float getCurrentAmplitudeAudio(String id) {
-        AudioPlayer audio = this.players.get(id);
-        if (audio != null) {
-            return (audio.getCurrentAmplitude());
-        }
-        return 0;
     }
 }
