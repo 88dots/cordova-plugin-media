@@ -192,6 +192,7 @@ Media.prototype.getCurrentPosition = function(success, fail) {
  */
 Media.prototype.release = function() {
     try {
+        delete mediaObjects[this.id];
         delete this.node;
     } catch (err) {
         Media.onStatus(this.id, Media.MEDIA_ERROR, err);
@@ -245,9 +246,9 @@ Media.onStatus = function(id, msgType, value) {
                 }
                 break;
         }
-    } else if (console.error) {
+    }/* else if (console.error) {
         console.error("Received Media.onStatus callback for unknown media :: " + id);
-    }
+    }*/
 };
 
 module.exports = Media;

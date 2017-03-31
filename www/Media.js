@@ -128,6 +128,7 @@ Media.prototype.getCurrentPosition = function(success, fail) {
  * Release the resources.
  */
 Media.prototype.release = function() {
+    delete mediaObjects[this.id];
     exec(null, this.errorCallback, "Media", "release", [this.id]);
 };
 
@@ -190,9 +191,9 @@ Media.onStatus = function(id, msgType, value) {
                 }
                 break;
         }
-    } else if (console.error) {
+    }/* else if (console.error) {
         console.error("Received Media.onStatus callback for unknown media :: " + id);
-    }
+    }*/
 
 };
 
