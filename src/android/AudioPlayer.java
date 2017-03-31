@@ -456,7 +456,8 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
             this.player.prepareAsync();
         }
         else {
-            String fileClean = file.replaceAll("^[/\\\\]*?www[/\\\\]*?(\\w+)", "$1").replaceAll("^[/\\\\]*?(\\w+)", "$1");
+            // strip "/android_asset/", "/www/", and leading "/"
+            String fileClean = file.replaceAll("^[/\\\\]*?android_asset[/\\\\]*?(\\w+)", "$1").replaceAll("^[/\\\\]*?www[/\\\\]*?(\\w+)", "$1").replaceAll("^[/\\\\]*?(\\w+)", "$1");
             String f = new File("www/" + fileClean).toString();
             android.content.res.AssetFileDescriptor fd = this.handler.cordova.getActivity().getAssets().openFd(f);
             this.player.setDataSource(fd.getFileDescriptor(), fd.getStartOffset(), fd.getLength());
