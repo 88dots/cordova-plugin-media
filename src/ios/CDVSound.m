@@ -626,8 +626,19 @@
 
 - (void)onMemoryWarning
 {
-    [[self soundCache] removeAllObjects];
-    [self setSoundCache:nil];
+    /* https://issues.apache.org/jira/browse/CB-11513 */
+    NSMutableArray* keysToRemove = [[NSMutableArray alloc] init];
+
+    for(id key in [self soundCache]) {
+        CDVAudioFile* audioFile = [[self soundCache] objectForKey:key];
+        if (audioFile != nil) {
+            if (audioFile.player != nil && ![audioFile.player isPlaying]) {
+                [keysToRemove addObject:key];
+            }
+        }
+    }
+
+    [[self soundCache] removeObjectsForKeys:keysToRemove];
     [self setAvSession:nil];
 
     [super onMemoryWarning];
