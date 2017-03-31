@@ -444,6 +444,7 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
     public void onPrepared(MediaPlayer player) {
         // Listen for playback completion
         this.player.setOnCompletionListener(this);
+        this.setState(STATE.MEDIA_STARTING);
         // seek to any location received while not prepared
         this.seekToPlaying(this.seekOnPrepared);
         // If start playing after prepared
@@ -451,8 +452,6 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
             this.player.start();
             this.setState(STATE.MEDIA_RUNNING);
             this.seekOnPrepared = 0; //reset only when played
-        } else {
-            this.setState(STATE.MEDIA_STARTING);
         }
         // Save off duration
         this.duration = getDurationInSeconds();
@@ -642,7 +641,7 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
             this.player.setAudioStreamType(AudioManager.STREAM_MUSIC);
             //if it's a streaming file, play mode is implied
             this.setMode(MODE.PLAY);
-            this.setState(STATE.MEDIA_STARTING);
+            this.setState(STATE.MEDIA_LOADING);
             this.player.setOnPreparedListener(this);
             this.player.prepareAsync();
         }
@@ -663,7 +662,7 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
                     this.player.setDataSource(Environment.getExternalStorageDirectory().getPath() + "/" + file);
                 }
             }
-                this.setState(STATE.MEDIA_STARTING);
+                this.setState(STATE.MEDIA_LOADING);
                 this.player.setOnPreparedListener(this);
                 this.player.prepare();
 
